@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe Stretcher::IndexType do
   let(:server) { Stretcher::Server.new(ES_URL, :logger => DEBUG_LOGGER) }
-  let(:index) { ensure_test_index(server, :foo) }
-  let(:type) {  index.type(:bar) }
+  let!(:index) { ensure_test_index(server, :foo) }
+  let!(:type) {  index.type(:bar) }
 
   it "should be existentially aware" do
     t = index.type(:existential)
@@ -11,11 +11,11 @@ describe Stretcher::IndexType do
     mapping = {"existential" => {"properties" => {"message" => {"type" => "string"}}}}
     t.put_mapping mapping
     t.exists?.should be_true
-    t.get_mapping.should == mapping
+    t.get_mapping.foo.mappings.to_hash.should == mapping
   end
 
   before do
-    type.delete_query(:match_all => {})
+    type.delete_query(query: {:match_all => {}})
     index.refresh
     type.put_mapping({"bar" => {
                          "properties" => {
@@ -39,7 +39,7 @@ describe Stretcher::IndexType do
 
     it "should build results when _source is not included in loaded fields" do
       res = type.search(:query => {:match_all => {}}, :fields => ['message'])
-      res.results.first.message.should == @doc[:message]
+      res.results.first.message.should == [@doc[:message]]
     end
 
     it "should build results when no document fields are selected" do
@@ -96,8 +96,8 @@ describe Stretcher::IndexType do
 
     it 'allows options to be passed through' do
       response = type.mget([988, 989], :fields => 'message')
-      response.docs.first.fields.message.should == 'message one!'
-      response.docs.last.fields.message.should == 'message two!'
+      response.docs.first.fields.message.should == ['message one!']
+      response.docs.last.fields.message.should == ['message two!']
     end
   end
 
@@ -169,7 +169,7 @@ describe Stretcher::IndexType do
 
       it 'should allow options to be passed through' do
         index.refresh
-        type.explain(987, {:query => {:match_all => {}}}, {:fields => 'message'}).get.fields.message.should == 'hello!'
+        type.explain(987, {:query => {:match_all => {}}}, {:fields => 'message'}).get.fields.message.should == ['hello!']
       end
     end
     
@@ -185,11 +185,11 @@ describe Stretcher::IndexType do
 
     it "should update individual docs correctly using doc and fields" do
       response =  type.update(987, {:doc => {:message => 'Updated!'}}, :fields => 'message')
-      response.get.fields.message.should == 'Updated!'      
+      response.get.fields.message.should == ['Updated!']
     end
 
     it "should delete by query correctly" do
-      type.delete_query("match_all" => {})
+      type.delete_query({"query" => {"match_all" => {}}})
       index.refresh
       type.exists?(987).should be_false
     end
@@ -210,11 +210,12 @@ describe Stretcher::IndexType do
 
   describe 'percolate' do
     before do
-      index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).ok
+      index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}})
     end
 
     it 'returns matching percolated queries based on the document' do
-      type.percolate({:baz => 'qux'}).matches.should == ['bar']
+      matches = type.percolate({:baz => 'qux'}).matches
+      matches.map(&:_id).should == ['bar']
     end
   end
 end

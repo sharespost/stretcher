@@ -61,8 +61,8 @@ module Stretcher
           index_meta[key] = d.delete(key) if system_fields.include?(key.to_s)
         end
 
-        post_data << (MultiJson.dump({action => index_meta}) << "\n")
-        post_data << (MultiJson.dump(d) << "\n") unless action == :delete
+        post_data << (JSON.dump({action => index_meta}) << "\n")
+        post_data << (JSON.dump(d) << "\n") unless action == :delete
         post_data
       }
       bulk body, options
@@ -209,7 +209,7 @@ module Stretcher
     private
 
     def percolator_query_path(query_name)
-      server.path_uri("/_percolator/#{name}/#{query_name}")
+      server.path_uri("/#{name}/.percolator/#{query_name}")
     end
   end
 end

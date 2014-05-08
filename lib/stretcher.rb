@@ -3,9 +3,8 @@ require 'logger'
 require 'hashie'
 require 'excon'
 require 'faraday'
+require 'json'
 require 'faraday_middleware'
-require 'faraday_middleware/multi_json'
-Faraday.load_autoloaded_constants
 require "stretcher/version"
 require 'stretcher/request_error'
 require 'stretcher/search_results'

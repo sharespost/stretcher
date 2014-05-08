@@ -2,13 +2,13 @@ require 'spec_helper'
 # Explictly test threaded mode 
 describe Stretcher::Server do
   let(:server) do
-    Stretcher::Server.new(ES_URL, :http_threadsafe => true, :logger => DEBUG_LOGGER)    
+    Stretcher::Server.new(ES_URL, :http_threadsafe => true, :logger => DEBUG_LOGGER)
   end
 
   it "should initialize threadsafe mode cleanly" do
     server.class.should == Stretcher::Server
   end
-  
+
   it "should properly return that our server is up" do
     server.up?.should be_true
   end
@@ -36,21 +36,26 @@ describe Stretcher::Server do
     # indicates an unexpected result
     t1.status.should match /run|sleep/
     t2.status.should match /run|sleep/
-    
+
     t1.join
     t2.join
   end
 
   it "should check the status w/o error" do
-    server.status.ok.should be_true
+    expect do
+      server.status
+    end.to_not raise_error
+
   end
 
   it "should refresh w/o error" do
-    server.refresh.ok.should be_true
+    expect do
+      server.refresh
+    end.to_not raise_error
   end
 
   it "should perform unthreaded alias operations properly" do
-    
+
     server.index(:foots).delete if server.index(:foots).exists?
     server.index(:foots).create
     server.aliases(:actions => [{:add => {:index => :foots, :alias => :foots_alias}}])
@@ -71,11 +76,14 @@ describe Stretcher::Server do
   end
 
   it "should check the status w/o error" do
-    server.status.ok.should be_true
+    expect do
+      server.status
+    end.to_not raise_error
   end
 
   it "should refresh w/o error" do
-    server.refresh.ok.should be_true
+    expect do
+      server.refresh
+    end.to_not raise_error
   end
-
 end

@@ -6,9 +6,9 @@ module Stretcher
     # Returns a properly configured HTTP client when initializing an instance
     def self.build_client(uri_components, options={})
       http = Faraday.new(:url => uri_components) do |builder|
-        builder.response :multi_json, :content_type => /\bjson$/
+        builder.response :json, :content_type => /\bjson$/
 
-        builder.request :multi_json
+        builder.request :json
 
         builder.options[:timeout] = options[:read_timeout] || 30
         builder.options[:open_timeout] = options[:open_timeout] || 2
@@ -142,7 +142,7 @@ module Stretcher
     #    server.msearch(data)
     def msearch(body=[])
       raise ArgumentError, "msearch takes an array!" unless body.is_a?(Array)
-      fmt_body = body.map {|l| MultiJson.dump(l) }.join("\n") << "\n"
+      fmt_body = body.map {|l| JSON.dump(l) }.join("\n") << "\n"
 
       res = request(:get, path_uri("/_msearch"), {}, fmt_body, {}, :mashify => false)
 
@@ -166,12 +166,13 @@ module Stretcher
       opts = {:exists => true}.merge(arg_opts)
       
       res = request(:get, path_uri("/_mget"), {}, {:docs => docs})[:docs]
-      if opts.has_key?(:exists)
-        match = opts[:exists]
-        res.select {|d| d[:exists] == match}
-      else
+
+      # if opts.has_key?(:exists)
+      #   match = opts[:exists]
+      #   res.select {|d| d[:exists] == match}
+      # else
         res
-      end
+      # end
     end
     
     # legacy implementation of mget for backwards compat

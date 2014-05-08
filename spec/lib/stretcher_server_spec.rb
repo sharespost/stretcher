@@ -65,11 +65,13 @@ describe Stretcher::Server do
   end
 
   it "should check the status w/o error" do
-    server.status.ok.should be_true
+    expect do
+      server.status
+    end.to_not raise_error
   end
 
   it "should refresh w/o error" do
-    server.refresh.ok.should be_true
+    expect { server.refresh }.not_to raise_error
   end
 
   it "should beget an index object cleanly" do

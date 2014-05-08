@@ -36,15 +36,15 @@ describe Stretcher::Alias do
   end
 
   describe 'destroying' do
-
     before do
-      my_alias.delete
+      my_alias.create
     end
 
     it 'should have removed the alias' do
-      my_alias.should_not exist
+      my_alias.exist?.should == true
+      my_alias.delete
+
+      my_alias.exist?.should == false
     end
-
   end
-
 end

@@ -41,7 +41,7 @@ describe Stretcher::Index do
     options = { :mappings => { :movie => { :properties => { :category => { :type => 'string' } } } } }
 
     server.logger.should_receive(:debug) do |&block|
-      block.call.should == %{curl -XPUT 'http://localhost:9200/foo' -d '#{MultiJson.dump(options)}' '-H Accept: application/json' '-H Content-Type: application/json' '-H User-Agent: Stretcher Ruby Gem #{Stretcher::VERSION}'}
+      block.call.should == %{curl -XPUT 'http://localhost:9200/foo' -d '#{JSON.dump(options)}' '-H Accept: application/json' '-H Content-Type: application/json' '-H User-Agent: Stretcher Ruby Gem #{Stretcher::VERSION}'}
     end
 
     index.create(options)
@@ -80,21 +80,20 @@ describe Stretcher::Index do
   end
 
   it "should return the status without error" do
-    index.status['ok'].should be_true
-  end
-
-  it "should put mappings for new types correctly" do
-    create_tweet_mapping
+    expect do
+      index.status
+    end.to_not raise_error
   end
 
   it 'should be able to get mapping' do
+    create_tweet_mapping
     index.get_mapping.should_not be_nil
     index.get_mapping.foo.should_not be_nil
   end
 
   it "should retrieve settings properly" do
-    index.get_settings['foo']['settings']['index.number_of_shards'].should eq("1")
-    index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("0")
+    index.get_settings['foo']['settings']['index']['number_of_shards'].should eq("1")
+    index.get_settings['foo']['settings']['index']['number_of_replicas'].should eq("0")
   end
 
   describe "bulk operations" do
@@ -115,10 +114,14 @@ describe Stretcher::Index do
                    {"_type" => 'tweet', "_id" => 'fooid'},
                    {"_type" => 'tweet', "_id" => 'barid'},
                   ]
-      index.mget(docs_meta).length.should == 2
+      result = index.mget(docs_meta)
+      result.map(&:found).should == [true, true]
+
       index.bulk_delete(docs_meta)
+
       index.refresh
-      res = index.mget(docs_meta).length.should == 0
+      result = index.mget(docs_meta)
+      result.map(&:found).should == [false, false]
     end
     
     it 'allows _routing to be set on bulk index documents' do
@@ -164,7 +167,7 @@ describe Stretcher::Index do
   it "should delete by query" do
     seed_corpus
     index.search(:query => {:match_all => {}}).total == 3
-    index.delete_query(:match_all => {})
+    index.delete_query({query: {:match_all => {}}})
     index.refresh
     index.search(:query => {:match_all => {}}).total == 0
   end
@@ -224,9 +227,9 @@ describe Stretcher::Index do
 
   describe "#update_settings" do
     it "updates settings on the index" do
-      index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("0")
-      index.update_settings("index.number_of_replicas" => "1")
-      index.get_settings['foo']['settings']['index.number_of_replicas'].should eq("1")
+      index.get_settings['foo']['settings']['index']['number_of_replicas'].should eq("0")
+      index.update_settings("index" => {"number_of_replicas" => "1"})
+      index.get_settings['foo']['settings']['index']['number_of_replicas'].should eq("1")
     end
   end
 
@@ -240,7 +243,9 @@ describe Stretcher::Index do
       end
 
       it "successfully runs the optimize command for the index" do
-        expect(index.optimize.ok).to be_true
+        expect do
+          index.optimize
+        end.to_not raise_error
       end
     end
 
@@ -251,10 +256,11 @@ describe Stretcher::Index do
       end
 
       it "successfully runs the optimize command for the index with the options passed" do
-        expect(index.optimize("max_num_segments" => 1).ok).to be_true
+        expect do
+          index.optimize("max_num_segments" => 1)
+        end.to_not raise_error
       end
     end
-
   end
 
   context 'percolator' do
@@ -262,17 +268,21 @@ describe Stretcher::Index do
 
     describe '#register_percolator_query' do
       it "registers the percolator query with a put request" do
-        expect(index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).ok).to be_true
+        expect do
+          index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}})
+        end.to_not raise_error
       end
     end
 
     describe '#delete_percolator_query' do
       before do
-        index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}}).ok
+        index.register_percolator_query('bar', {:query => {:term => {:baz => 'qux'}}})
       end
 
       it "deletes the percolator query with a delete request" do
-        expect(index.delete_percolator_query('bar').ok).to be_true
+        expect do
+          index.delete_percolator_query('bar')
+        end.to_not raise_error
       end
     end
   end
