@@ -207,6 +207,10 @@ module Stretcher
       do_alias(alias_name_or_prefix)
     end
 
+    def indexes
+      stats['indices'].map {|i| index(i[0]) }
+    end
+
     # Perform a refresh, making all indexed documents available
     def refresh
       do_refresh

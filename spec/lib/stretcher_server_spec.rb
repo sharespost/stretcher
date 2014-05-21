@@ -151,4 +151,15 @@ describe Stretcher::Server do
     end
   end
 
+  describe '#indexes' do
+    before do
+      ensure_test_index(server, :fffoo)
+      ensure_test_index(server, :bbbar)
+    end
+
+    it 'returns all of the indexes for this server' do
+      server.indexes.map(&:name).should include('fffoo')
+      server.indexes.map(&:name).should include('bbbar')
+    end
+  end
 end
